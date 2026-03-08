@@ -88,17 +88,19 @@ final class SiteScriptsSpeedManager {
     /* ================================================================== */
 
     public function add_menu(): void {
-        add_options_page(
+        add_menu_page(
             'Site Scripts & Speed Manager',
             'Scripts & Speed',
             'manage_options',
             self::SLUG,
-            [$this, 'render_page']
+            [$this, 'render_page'],
+            'dashicons-performance',
+            81
         );
     }
 
     public function enqueue_admin(string $hook): void {
-        if ($hook !== 'settings_page_' . self::SLUG) {
+        if ($hook !== 'toplevel_page_' . self::SLUG) {
             return;
         }
 
