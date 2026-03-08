@@ -3,7 +3,7 @@
  * Plugin Name: Site Scripts & Speed Manager
  * Plugin URI:  https://thinkabove.ai/plugins/site-scripts-speed-manager
  * Description: A plugin that allows you to defer, async and ignore scripts with a simple interface and powerful results. More control with ease of use.
- * Version:     2.1.1
+ * Version:     2.2.0
  * Author:      Think Above AI
  * Author URI:  https://thinkabove.ai
  * License:     GPL v2 or later
@@ -17,7 +17,7 @@ defined('ABSPATH') || exit;
 
 final class SiteScriptsSpeedManager {
 
-    const VERSION    = '2.1.1';
+    const VERSION    = '2.2.0';
     const OPTION_KEY = 'sssm_settings';
     const SLUG       = 'site-scripts-speed-manager';
 
@@ -295,17 +295,25 @@ final class SiteScriptsSpeedManager {
 
     public function render_page(): void {
         $s = $this->get();
+        $active_count = count(array_filter($s['scripts'], function ($v) { return $v !== 'none'; }));
         ?>
         <div class="wrap" id="sssm-wrap">
-            <h1><span class="dashicons dashicons-performance" style="font-size:28px;vertical-align:middle;margin-right:6px;"></span> Site Scripts & Speed Manager</h1>
-            <p class="description">Defer, async and ignore scripts with a simple interface and powerful results.</p>
 
-            <!-- ─── Master toggle ─── -->
+            <!-- ─── Page Header ─── -->
+            <div class="sssm-page-header">
+                <div class="sssm-icon"><span class="dashicons dashicons-performance"></span></div>
+                <h1>Scripts &amp; Speed Manager</h1>
+            </div>
+            <p class="sssm-page-subtitle">Scan, analyze, and optimize how JavaScript loads on your site — per script, with one click.</p>
+
+            <!-- ─── Master Toggle ─── -->
             <div class="sssm-card sssm-toggle-card <?php echo $s['enabled'] ? 'on' : ''; ?>">
                 <div class="sssm-flex">
                     <div>
-                        <h2 style="margin:0">Script Optimization</h2>
-                        <p class="description" style="margin:4px 0 0">Master switch — turning off removes all modifications instantly.</p>
+                        <h2 style="margin:0"><span class="sssm-status-dot"></span> Script Optimization</h2>
+                        <p class="description" style="margin:4px 0 0">
+                            Master switch — when off, all scripts load normally. <?php if ($active_count > 0): ?><strong><?php echo esc_html($active_count); ?> script(s)</strong> with custom strategies.<?php endif; ?>
+                        </p>
                     </div>
                     <label class="sssm-switch">
                         <input type="checkbox" id="sssm-master" <?php checked($s['enabled']); ?>>
@@ -316,15 +324,21 @@ final class SiteScriptsSpeedManager {
             </div>
 
             <!-- ─── Scanner ─── -->
-            <div class="sssm-card">
-                <h2>Scan Page</h2>
-                <p class="description">Enter any URL on your site. Scripts from multiple scans are merged automatically.</p>
+            <div class="sssm-card sssm-scan-card">
+                <div class="sssm-card-header">
+                    <div class="sssm-card-icon"><span class="dashicons dashicons-search"></span></div>
+                    <div>
+                        <h2 style="margin:0">Scan Page</h2>
+                        <p class="description" style="margin:2px 0 0">Enter any URL on your site. Results from multiple scans merge automatically.</p>
+                    </div>
+                </div>
                 <div class="sssm-scan-row">
-                    <input id="sssm-url" type="url" class="regular-text"
+                    <input id="sssm-url" type="url"
                            value="<?php echo esc_attr(home_url('/')); ?>"
                            placeholder="<?php echo esc_attr(home_url('/')); ?>">
-                    <button id="sssm-scan" class="button button-primary">
-                        <span class="dashicons dashicons-search" style="vertical-align:middle;margin-top:-2px;"></span> Scan Scripts
+                    <button id="sssm-scan" class="sssm-btn sssm-btn-primary">
+                        <span class="dashicons dashicons-search" style="font-size:16px;width:16px;height:16px;"></span>
+                        Scan Scripts
                     </button>
                     <span class="spinner" id="sssm-spin"></span>
                 </div>
@@ -333,61 +347,120 @@ final class SiteScriptsSpeedManager {
 
             <!-- ─── Results ─── -->
             <div class="sssm-card" id="sssm-results" style="display:none">
-                <div class="sssm-flex" style="margin-bottom:12px;">
-                    <h2 style="margin:0">Scripts <span class="sssm-pill" id="sssm-n"></span></h2>
+
+                <!-- Stats bar -->
+                <div class="sssm-stats" id="sssm-stats"></div>
+
+                <!-- Header with actions -->
+                <div class="sssm-results-header">
+                    <div class="sssm-results-title">
+                        <h2 style="margin:0">Discovered Scripts</h2>
+                        <span class="sssm-pill" id="sssm-n"></span>
+                    </div>
                     <div class="sssm-actions">
-                        <button class="button" id="sssm-all-defer">All Controllable → Defer</button>
-                        <button class="button" id="sssm-all-none">All → None</button>
-                        <button class="button button-primary" id="sssm-save">
-                            <span class="dashicons dashicons-saved" style="vertical-align:middle;margin-top:-2px;"></span> Save Settings
+                        <button class="sssm-btn sssm-btn-secondary" id="sssm-all-defer">
+                            <span class="dashicons dashicons-controls-forward" style="font-size:14px;width:14px;height:14px;"></span>
+                            Defer All
+                        </button>
+                        <button class="sssm-btn sssm-btn-secondary" id="sssm-all-none">
+                            <span class="dashicons dashicons-dismiss" style="font-size:14px;width:14px;height:14px;"></span>
+                            Reset All
+                        </button>
+                        <button class="sssm-btn sssm-btn-success" id="sssm-save">
+                            <span class="dashicons dashicons-saved" style="font-size:14px;width:14px;height:14px;"></span>
+                            Save Settings
                         </button>
                     </div>
                 </div>
 
-                <div class="sssm-legend">
-                    <span class="badge b-lock">🔒 Protected</span> Cannot be deferred
-                    &nbsp;&nbsp;
-                    <span class="badge b-wp">WP</span> WordPress-enqueued (controllable)
-                    &nbsp;&nbsp;
-                    <span class="badge b-ext">EXT</span> External / hardcoded (display only)
+                <!-- Filter tabs -->
+                <div class="sssm-filters" id="sssm-filters"></div>
+
+                <!-- Search + legend row -->
+                <div class="sssm-table-controls">
+                    <div class="sssm-search-wrap">
+                        <span class="dashicons dashicons-search"></span>
+                        <input type="text" id="sssm-search" placeholder="Filter scripts by name or URL&hellip;">
+                    </div>
+                    <div class="sssm-legend">
+                        <span class="sssm-legend-item"><span class="badge b-lock">🔒</span> Protected</span>
+                        <span class="sssm-legend-item"><span class="badge b-wp">WP</span> Controllable</span>
+                        <span class="sssm-legend-item"><span class="badge b-ext">EXT</span> Hardcoded</span>
+                    </div>
                 </div>
 
-                <table class="widefat fixed striped" id="sssm-table">
+                <table id="sssm-table">
                     <thead>
                         <tr>
                             <th style="width:200px">Handle</th>
-                            <th>Source URL</th>
+                            <th>Source</th>
                             <th style="width:80px">Type</th>
                             <th style="width:90px">Current</th>
-                            <th style="width:160px">Strategy</th>
+                            <th style="width:150px">Strategy</th>
                         </tr>
                     </thead>
                     <tbody id="sssm-tbody">
-                        <tr><td colspan="5" style="text-align:center;color:#646970;">Scan a page to discover scripts&hellip;</td></tr>
+                        <tr>
+                            <td colspan="5">
+                                <div class="sssm-empty-state">
+                                    <span class="dashicons dashicons-media-code"></span>
+                                    <p>Scan a page above to discover scripts</p>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- ─── Legend ─── -->
+            <!-- ─── Loading Strategies ─── -->
             <div class="sssm-card sssm-muted">
-                <h3 style="margin-top:0">Loading Strategies Explained</h3>
-                <table class="sssm-info">
-                    <tr>
-                        <td><strong>None</strong></td>
-                        <td>Default browser behaviour — script downloads and runs immediately, blocking page rendering. Use for jQuery and critical scripts.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Defer</strong></td>
-                        <td>Downloads in parallel with HTML parsing, executes <em>after</em> the page is fully parsed. Maintains execution order between deferred scripts. <strong>Best for most scripts.</strong></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Async</strong></td>
-                        <td>Downloads in parallel, executes as soon as it's ready (no guaranteed order). <strong>Best for independent scripts</strong> like analytics &amp; tracking pixels.</td>
-                    </tr>
-                </table>
-                <p class="description" style="margin-top:12px;">
-                    <strong>⚠️ Tip:</strong> If anything breaks, flip the master switch off — all modifications are removed instantly, no cache clearing needed.
-                </p>
+                <h2 style="margin:0 0 4px">Loading Strategies</h2>
+                <p class="description" style="margin:0 0 12px">Understanding how each strategy affects script loading and page performance.</p>
+
+                <div class="sssm-strategies">
+                    <div class="sssm-strategy-card sssm-strat-none">
+                        <h4>
+                            <span class="sssm-strategy-icon">—</span>
+                            None
+                        </h4>
+                        <p>Default browser behavior — script downloads and executes immediately, blocking page rendering. Use for jQuery and other critical dependencies.</p>
+                    </div>
+                    <div class="sssm-strategy-card sssm-strat-defer">
+                        <h4>
+                            <span class="sssm-strategy-icon">D</span>
+                            Defer
+                            <span class="sssm-strategy-badge">Recommended</span>
+                        </h4>
+                        <p>Downloads in parallel with HTML parsing, executes <em>after</em> the document is fully parsed. Maintains execution order. Best for most scripts.</p>
+                    </div>
+                    <div class="sssm-strategy-card sssm-strat-async">
+                        <h4>
+                            <span class="sssm-strategy-icon">A</span>
+                            Async
+                        </h4>
+                        <p>Downloads in parallel, executes as soon as ready — no guaranteed order. Best for independent scripts like analytics and tracking pixels.</p>
+                    </div>
+                </div>
+
+                <div class="sssm-tip">
+                    <span class="sssm-tip-icon">💡</span>
+                    <div><strong>Quick tip:</strong> If anything breaks after optimizing, just flip the master switch off. All modifications are removed instantly — no cache clearing needed.</div>
+                </div>
+            </div>
+
+            <!-- ─── Footer / Branding ─── -->
+            <div class="sssm-footer">
+                <span>Built by</span>
+                <a href="https://thinkabove.ai" target="_blank" rel="noopener noreferrer">
+                    <svg class="sssm-footer-logo" viewBox="0 0 140 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <text x="0" y="17" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="700" fill="#6b7280">Think Above</text>
+                        <text x="110" y="17" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="700" fill="#2563eb"> AI</text>
+                    </svg>
+                </a>
+                <span class="sssm-footer-sep">·</span>
+                <a href="https://thinkabove.ai" target="_blank" rel="noopener noreferrer">thinkabove.ai</a>
+                <span class="sssm-footer-sep">·</span>
+                <span>v<?php echo esc_html(self::VERSION); ?></span>
             </div>
         </div>
         <?php
