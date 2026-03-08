@@ -122,7 +122,10 @@ final class SiteScriptsSpeedManager {
     /* ================================================================== */
 
     public function ajax_scan(): void {
-        $this->verify();
+        check_ajax_referer('sssm', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized', 403);
+        }
 
         $url = esc_url_raw(wp_unslash($_POST['url'] ?? ''));
         if (!$url) {
@@ -146,7 +149,10 @@ final class SiteScriptsSpeedManager {
     /* ================================================================== */
 
     public function ajax_crawl(): void {
-        $this->verify();
+        check_ajax_referer('sssm', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized', 403);
+        }
 
         // Gather URLs to scan
         $urls = $this->discover_site_urls();
@@ -252,7 +258,7 @@ final class SiteScriptsSpeedManager {
 
             $scripts[$key] = [
                 'key'          => $key,
-                'handle'       => $handle ?: basename(parse_url($src, PHP_URL_PATH)),
+                'handle'       => $handle ?: basename(wp_parse_url($src, PHP_URL_PATH)),
                 'src'          => $src,
                 'type'         => $type,
                 'has_defer'    => $has_defer,
@@ -314,9 +320,12 @@ final class SiteScriptsSpeedManager {
     /* ================================================================== */
 
     public function ajax_save(): void {
-        $this->verify();
+        check_ajax_referer('sssm', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized', 403);
+        }
 
-        $raw = json_decode(wp_unslash($_POST['scripts'] ?? '{}'), true);
+        $raw = json_decode(sanitize_text_field(wp_unslash($_POST['scripts'] ?? '{}')), true);
         if (!is_array($raw)) {
             wp_send_json_error('Bad payload');
         }
@@ -352,7 +361,10 @@ final class SiteScriptsSpeedManager {
     /* ================================================================== */
 
     public function ajax_toggle(): void {
-        $this->verify();
+        check_ajax_referer('sssm', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized', 403);
+        }
 
         $on = !empty($_POST['enabled']);
         $s  = $this->get();
@@ -604,13 +616,6 @@ final class SiteScriptsSpeedManager {
     /* ================================================================== */
     /*  Internal helpers                                                   */
     /* ================================================================== */
-
-    private function verify(): void {
-        check_ajax_referer('sssm', 'nonce');
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized', 403);
-        }
-    }
 }
 
 new SiteScriptsSpeedManager();

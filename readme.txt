@@ -1,10 +1,10 @@
 === Site Scripts & Speed Manager ===
 Contributors: thinkaboveai
 Donate link: https://thinkabove.ai
-Tags: defer, async, scripts, performance, speed, page speed, core web vitals, optimization
+Tags: defer, async, scripts, performance, speed
 Requires at least: 5.8
-Tested up to: 6.7
-Stable tag: 2.1.1
+Tested up to: 6.9
+Stable tag: 2.3.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -53,7 +53,7 @@ Scripts load in three ways:
 
 1. Upload the `site-scripts-speed-manager` folder to `/wp-content/plugins/`
 2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Go to **Settings → Scripts & Speed**
+3. Go to **Scripts & Speed** in the admin menu
 4. Enter a URL and click **Scan Scripts**
 5. Choose Defer, Async, or None for each script
 6. Click **Save Settings**
