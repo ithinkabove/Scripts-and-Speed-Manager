@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Site Scripts & Speed Manager
- * Plugin URI:  https://thinkabove.ai
+ * Plugin URI:  https://thinkabove.ai/site-scripts-speed-manager/
  * Description: A plugin that allows you to defer, async and ignore scripts with a simple interface and powerful results. More control with ease of use.
  * Version:     2.3.0
  * Author:      Think Above AI
